@@ -69,14 +69,14 @@ const fonts = [
   { family: 'Times New Roman, serif', weight: '700', style: 'normal' },
 ];
 
-const sizes = [14, 18, 22, 28, 36, 44, 56, 72];
+const sizes = [14, 18, 22, 28, 36, 44, 54];
 const maxWordmarks = 120;
 const wordmarks = [];
 let lastX = -1;
 let lastY = -1;
 let fontIndex = 0;
 
-function createWordmark(x, y) {
+function createWordmark(x, y, spread, sizeOverride) {
   const el = document.createElement('div');
   el.className = 'wordmark';
   el.textContent = 'DANNY NY';
@@ -84,9 +84,9 @@ function createWordmark(x, y) {
   const font = fonts[fontIndex % fonts.length];
   fontIndex++;
 
-  const size = sizes[Math.floor(Math.random() * sizes.length)];
-  const offsetX = (Math.random() - 0.5) * 40;
-  const offsetY = (Math.random() - 0.5) * 40;
+  const size = sizeOverride || sizes[Math.floor(Math.random() * sizes.length)];
+  const offsetX = (Math.random() - 0.5) * (spread || 40);
+  const offsetY = (Math.random() - 0.5) * (spread || 40);
   const rotation = (Math.random() - 0.5) * 30;
 
   el.style.fontFamily = font.family;
@@ -108,6 +108,14 @@ function createWordmark(x, y) {
   }
 }
 
+function explode(x, y) {
+  const count = 12 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < count; i++) {
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    createWordmark(x, y, 300, size);
+  }
+}
+
 let throttle = false;
 
 document.addEventListener('mousemove', (e) => {
@@ -125,6 +133,10 @@ document.addEventListener('mousemove', (e) => {
   }
 
   requestAnimationFrame(() => { throttle = false; });
+});
+
+document.addEventListener('click', (e) => {
+  explode(e.clientX, e.clientY);
 });
 </script>
 </body>
