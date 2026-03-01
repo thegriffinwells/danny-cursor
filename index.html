@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DANNY NY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Oswald:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Anton&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Archivo+Black&family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;700&family=Syne:wght@400;700;800&family=Darker+Grotesque:wght@400;700;900&family=Bodoni+Moda:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #fff;
+    cursor: crosshair;
+  }
+
+  .wordmark {
+    position: absolute;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    color: #000;
+    opacity: 0;
+    animation: fadeIn 0.1s ease-out forwards;
+    transition: opacity 0.3s ease;
+  }
+
+  .wordmark.fading {
+    opacity: 0 !important;
+    transition: opacity 1.5s ease;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<script>
+const fonts = [
+  { family: 'Playfair Display', weight: '900', style: 'normal' },
+  { family: 'Playfair Display', weight: '400', style: 'italic' },
+  { family: 'Bebas Neue', weight: '400', style: 'normal' },
+  { family: 'Oswald', weight: '700', style: 'normal' },
+  { family: 'Libre Baskerville', weight: '700', style: 'normal' },
+  { family: 'Libre Baskerville', weight: '400', style: 'italic' },
+  { family: 'Anton', weight: '400', style: 'normal' },
+  { family: 'Cormorant Garamond', weight: '700', style: 'normal' },
+  { family: 'Cormorant Garamond', weight: '400', style: 'italic' },
+  { family: 'Archivo Black', weight: '400', style: 'normal' },
+  { family: 'DM Serif Display', weight: '400', style: 'normal' },
+  { family: 'DM Serif Display', weight: '400', style: 'italic' },
+  { family: 'Instrument Serif', weight: '400', style: 'normal' },
+  { family: 'Instrument Serif', weight: '400', style: 'italic' },
+  { family: 'Space Grotesk', weight: '700', style: 'normal' },
+  { family: 'Syne', weight: '800', style: 'normal' },
+  { family: 'Darker Grotesque', weight: '900', style: 'normal' },
+  { family: 'Bodoni Moda', weight: '900', style: 'normal' },
+  { family: 'Bodoni Moda', weight: '400', style: 'italic' },
+  { family: 'Georgia, serif', weight: '400', style: 'normal' },
+  { family: 'Impact, sans-serif', weight: '400', style: 'normal' },
+  { family: 'Times New Roman, serif', weight: '700', style: 'normal' },
+];
+
+const sizes = [14, 18, 22, 28, 36, 44, 56, 72];
+const maxWordmarks = 120;
+const wordmarks = [];
+let lastX = -1;
+let lastY = -1;
+let fontIndex = 0;
+
+function createWordmark(x, y) {
+  const el = document.createElement('div');
+  el.className = 'wordmark';
+  el.textContent = 'DANNY NY';
+
+  const font = fonts[fontIndex % fonts.length];
+  fontIndex++;
+
+  const size = sizes[Math.floor(Math.random() * sizes.length)];
+  const offsetX = (Math.random() - 0.5) * 40;
+  const offsetY = (Math.random() - 0.5) * 40;
+  const rotation = (Math.random() - 0.5) * 30;
+
+  el.style.fontFamily = font.family;
+  el.style.fontWeight = font.weight;
+  el.style.fontStyle = font.style;
+  el.style.fontSize = size + 'px';
+  el.style.letterSpacing = (Math.random() * 0.15).toFixed(2) + 'em';
+  el.style.left = (x + offsetX) + 'px';
+  el.style.top = (y + offsetY) + 'px';
+  el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+
+  document.body.appendChild(el);
+  wordmarks.push(el);
+
+  if (wordmarks.length > maxWordmarks) {
+    const old = wordmarks.shift();
+    old.classList.add('fading');
+    setTimeout(() => old.remove(), 1500);
+  }
+}
+
+let throttle = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (throttle) return;
+  throttle = true;
+
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (lastX === -1 || dist > 20) {
+    createWordmark(e.clientX, e.clientY);
+    lastX = e.clientX;
+    lastY = e.clientY;
+  }
+
+  requestAnimationFrame(() => { throttle = false; });
+});
+</script>
+</body>
+</html>
