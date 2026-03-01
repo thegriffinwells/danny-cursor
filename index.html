@@ -109,10 +109,48 @@ function createWordmark(x, y, spread, sizeOverride) {
 }
 
 function explode(x, y) {
-  const count = 12 + Math.floor(Math.random() * 8);
+  const count = 14 + Math.floor(Math.random() * 8);
   for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'wordmark';
+    el.textContent = 'DANNY NY';
+
+    const font = fonts[fontIndex % fonts.length];
+    fontIndex++;
+
     const size = sizes[Math.floor(Math.random() * sizes.length)];
-    createWordmark(x, y, 300, size);
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const distance = 150 + Math.random() * 250;
+    const endX = Math.cos(angle) * distance;
+    const endY = Math.sin(angle) * distance;
+    const rotation = (Math.random() - 0.5) * 60;
+
+    el.style.fontFamily = font.family;
+    el.style.fontWeight = font.weight;
+    el.style.fontStyle = font.style;
+    el.style.fontSize = size + 'px';
+    el.style.letterSpacing = (Math.random() * 0.15).toFixed(2) + 'em';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+    el.style.transition = 'none';
+    el.style.opacity = '1';
+    el.style.animation = 'none';
+
+    document.body.appendChild(el);
+    wordmarks.push(el);
+
+    requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.6s ease';
+      el.style.transform = `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) rotate(${rotation}deg)`;
+      el.style.opacity = '0.85';
+    });
+
+    if (wordmarks.length > maxWordmarks) {
+      const old = wordmarks.shift();
+      old.classList.add('fading');
+      setTimeout(() => old.remove(), 1500);
+    }
   }
 }
 
