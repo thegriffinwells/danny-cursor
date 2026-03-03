@@ -108,20 +108,15 @@
 
 <script>
 const famousDannys = [
-  // icons
   { name: 'DANNY DEVITO', wiki: 'Danny_DeVito' },
   { name: 'DANNY TREJO', wiki: 'Danny_Trejo' },
   { name: 'DANNY GLOVER', wiki: 'Danny_Glover' },
   { name: 'DANNY MCBRIDE', wiki: 'Danny_McBride' },
   { name: 'DANNY ELFMAN', wiki: 'Danny_Elfman' },
-  // 2025-2026 relevant
-  { name: 'DANNY RAMIREZ', wiki: 'Danny_Ramirez' },
   { name: 'DANNY RICCIARDO', wiki: 'Daniel_Ricciardo' },
   { name: 'DANNY GONZALEZ', wiki: 'Danny_Gonzalez' },
-  { name: 'DANNY DUNCAN', wiki: 'Danny_Duncan_(YouTuber)' },
   { name: 'DANNY PUDI', wiki: 'Danny_Pudi' },
   { name: 'DANNY DYER', wiki: 'Danny_Dyer' },
-  // more classics
   { name: 'DANNY BROWN', wiki: 'Danny_Brown' },
   { name: 'DANNY KAYE', wiki: 'Danny_Kaye' },
   { name: 'DANNY BOYLE', wiki: 'Danny_Boyle' },
@@ -129,8 +124,8 @@ const famousDannys = [
   { name: 'DANNY CAREY', wiki: 'Danny_Carey' },
   { name: 'DANNY AIELLO', wiki: 'Danny_Aiello' },
   { name: 'DANNY THOMAS', wiki: 'Danny_Thomas' },
-  { name: 'DANNY OCEAN', wiki: 'Ocean%27s_Eleven_(2001_film)' },
   { name: 'DANNY PHANTOM', wiki: 'Danny_Phantom' },
+  { name: 'DANNY ROSE', wiki: 'Danny_Rose_(footballer)' },
 ];
 
 let dannyImages = [];
@@ -142,27 +137,33 @@ let hintHidden = false;
 const dannyHint = document.getElementById('danny-hint');
 
 async function loadDannyImages() {
-  const results = await Promise.allSettled(
-    famousDannys.map(async (danny) => {
-      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
-      const data = await res.json();
-      if (data.thumbnail && data.thumbnail.source) {
-        const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
-        await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = src;
-        });
-        return { name: danny.name, src };
-      }
-      throw new Error('No thumbnail');
-    })
-  );
-
-  dannyImages = results
-    .filter(r => r.status === 'fulfilled')
-    .map(r => r.value);
+  // Load in small batches to avoid rate limiting
+  const batchSize = 4;
+  for (let i = 0; i < famousDannys.length; i += batchSize) {
+    const batch = famousDannys.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map(async (danny) => {
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
+        const data = await res.json();
+        if (data.thumbnail && data.thumbnail.source) {
+          const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
+          await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = src;
+          });
+          return { name: danny.name, src };
+        }
+        throw new Error('No thumbnail');
+      })
+    );
+    const loaded = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    dannyImages.push(...loaded);
+    if (i + batchSize < famousDannys.length) {
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
 }
 
 loadDannyImages();
