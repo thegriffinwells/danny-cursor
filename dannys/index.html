@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAMOUS DANNYS</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #fff;
+    cursor: crosshair;
+    touch-action: none;
+    -webkit-overflow-scrolling: none;
+    overscroll-behavior: none;
+  }
+
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    display: flex;
+    z-index: 9999;
+    background: transparent;
+  }
+
+  .tab-bar a {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #ccc;
+    transition: color 0.15s ease;
+  }
+
+  .tab-bar a.active {
+    color: #999;
+  }
+
+  .tab-bar a:not(.active):hover {
+    color: #999;
+  }
+
+  .danny-card {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  }
+
+  .danny-card.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .danny-card.fading {
+    opacity: 0 !important;
+    transform: translate(-50%, -50%) scale(0.6);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+
+  .danny-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .danny-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #ccc;
+    letter-spacing: 0.08em;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    line-height: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="danny-hint" id="danny-hint">MOVE YOUR CURSOR TO SUMMON THE DANNYS<br><span style="font-size:12px;color:#ddd">CLICK TO UNLEASH THEM</span></div>
+
+<div class="tab-bar">
+  <a href="/">TRAIL</a>
+  <a href="/dannys" class="active">FAMOUS DANNYS</a>
+</div>
+
+<script>
+const famousDannys = [
+  { name: 'DANNY DEVITO', wiki: 'Danny_DeVito' },
+  { name: 'DANNY GLOVER', wiki: 'Danny_Glover' },
+  { name: 'DANNY TREJO', wiki: 'Danny_Trejo' },
+  { name: 'DANNY MCBRIDE', wiki: 'Danny_McBride' },
+  { name: 'DANNY ELFMAN', wiki: 'Danny_Elfman' },
+  { name: 'DANNY KAYE', wiki: 'Danny_Kaye' },
+  { name: 'DANNY AIELLO', wiki: 'Danny_Aiello' },
+  { name: 'DANNY BROWN', wiki: 'Danny_Brown_(rapper)' },
+  { name: 'DANNY GREEN', wiki: 'Danny_Green_(basketball)' },
+  { name: 'DANNY BOYLE', wiki: 'Danny_Boyle' },
+  { name: 'DANNY WELBECK', wiki: 'Danny_Welbeck' },
+  { name: 'DANNY CAREY', wiki: 'Danny_Carey' },
+  { name: 'DANNY MASSEY', wiki: 'Daniel_Massey' },
+  { name: 'DANNY THOMAS', wiki: 'Danny_Thomas' },
+];
+
+let dannyImages = [];
+const dannyCards = [];
+const maxDannyCards = 40;
+let dannyLastX = -1;
+let dannyLastY = -1;
+let hintHidden = false;
+const dannyHint = document.getElementById('danny-hint');
+
+async function loadDannyImages() {
+  const results = await Promise.allSettled(
+    famousDannys.map(async (danny) => {
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
+      const data = await res.json();
+      if (data.thumbnail && data.thumbnail.source) {
+        const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = src;
+        });
+        return { name: danny.name, src };
+      }
+      throw new Error('No thumbnail');
+    })
+  );
+
+  dannyImages = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value);
+}
+
+loadDannyImages();
+
+function getRandomDanny() {
+  if (dannyImages.length === 0) return null;
+  return dannyImages[Math.floor(Math.random() * dannyImages.length)];
+}
+
+function spawnDanny(x, y, sizeMultiplier) {
+  const danny = getRandomDanny();
+  if (!danny) return;
+
+  if (!hintHidden) {
+    hintHidden = true;
+    dannyHint.style.opacity = '0';
+  }
+
+  const card = document.createElement('div');
+  card.className = 'danny-card';
+
+  const dim = (90 + Math.random() * 30) * (sizeMultiplier || 1);
+  const offsetX = (Math.random() - 0.5) * 100;
+  const offsetY = (Math.random() - 0.5) * 100;
+
+  card.style.left = (x + offsetX) + 'px';
+  card.style.top = (y + offsetY) + 'px';
+  card.style.width = dim + 'px';
+
+  const img = document.createElement('img');
+  img.src = danny.src;
+  img.alt = danny.name;
+  img.style.width = dim + 'px';
+  img.style.height = dim + 'px';
+  card.appendChild(img);
+
+  document.body.appendChild(card);
+  dannyCards.push(card);
+
+  requestAnimationFrame(() => {
+    card.classList.add('visible');
+  });
+
+  const lifetime = 1800 + Math.random() * 1200;
+  setTimeout(() => {
+    card.classList.remove('visible');
+    card.classList.add('fading');
+    setTimeout(() => card.remove(), 500);
+  }, lifetime);
+
+  if (dannyCards.length > maxDannyCards) {
+    const old = dannyCards.shift();
+    old.classList.remove('visible');
+    old.classList.add('fading');
+    setTimeout(() => old.remove(), 500);
+  }
+}
+
+function dannyExplode(x, y) {
+  const count = 8 + Math.floor(Math.random() * 6);
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+    const distance = 80 + Math.random() * 160;
+    const ex = x + Math.cos(angle) * distance;
+    const ey = y + Math.sin(angle) * distance;
+
+    setTimeout(() => {
+      spawnDanny(ex, ey, 0.8 + Math.random() * 0.6);
+    }, i * 40);
+  }
+}
+
+let dannyThrottle = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (dannyThrottle) return;
+  dannyThrottle = true;
+
+  const dx = e.clientX - dannyLastX;
+  const dy = e.clientY - dannyLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dannyLastX === -1 || dist > 60) {
+    spawnDanny(e.clientX, e.clientY);
+    dannyLastX = e.clientX;
+    dannyLastY = e.clientY;
+  }
+
+  requestAnimationFrame(() => { dannyThrottle = false; });
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.tab-bar')) return;
+  dannyExplode(e.clientX, e.clientY);
+});
+
+let dannyTouchMoved = false;
+let holdInterval = null;
+
+document.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  dannyTouchMoved = false;
+  const t = e.touches[0];
+  dannyLastX = t.clientX;
+  dannyLastY = t.clientY;
+  spawnDanny(t.clientX, t.clientY);
+
+  holdInterval = setInterval(() => {
+    spawnDanny(dannyLastX + (Math.random() - 0.5) * 60, dannyLastY + (Math.random() - 0.5) * 60);
+  }, 180);
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  dannyTouchMoved = true;
+  const t = e.touches[0];
+  const dx = t.clientX - dannyLastX;
+  const dy = t.clientY - dannyLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > 40) {
+    spawnDanny(t.clientX, t.clientY);
+    dannyLastX = t.clientX;
+    dannyLastY = t.clientY;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  clearInterval(holdInterval);
+  holdInterval = null;
+  if (!dannyTouchMoved) {
+    const t = e.changedTouches[0];
+    dannyExplode(t.clientX, t.clientY);
+  }
+  dannyLastX = -1;
+  dannyLastY = -1;
+}, { passive: false });
+</script>
+</body>
+</html>
