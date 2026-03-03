@@ -18,10 +18,68 @@
     height: 100%;
     overflow: hidden;
     background: #fff;
-    cursor: crosshair;
     touch-action: none;
     -webkit-overflow-scrolling: none;
     overscroll-behavior: none;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* Tab Navigation */
+  .tab-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid #000;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 14px 20px;
+    background: #fff;
+    border: none;
+    border-right: 2px solid #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    color: #999;
+  }
+
+  .tab-btn:last-child {
+    border-right: none;
+  }
+
+  .tab-btn.active {
+    background: #000;
+    color: #fff;
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: #f0f0f0;
+  }
+
+  /* Page containers */
+  .page {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+  }
+
+  .page.active {
+    display: block;
+  }
+
+  /* Page 1: Cursor Trail */
+  #page-cursor {
+    cursor: crosshair;
   }
 
   .wordmark {
@@ -43,10 +101,130 @@
   @keyframes fadeIn {
     to { opacity: 1; }
   }
+
+  /* Page 2: Famous Dannys */
+  #page-dannys {
+    cursor: crosshair;
+    overflow: hidden;
+    background: #f5f5f0;
+  }
+
+  .danny-card {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    user-select: none;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.3s ease;
+    overflow: hidden;
+    border: 3px solid rgba(0,0,0,0.1);
+    background-size: cover;
+    background-position: center top;
+  }
+
+  .danny-card .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 14px;
+    transition: background 0.3s ease;
+  }
+
+  .danny-card:hover .card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%);
+  }
+
+  .danny-card .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+    line-height: 1.1;
+    padding: 0 8px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+
+  .danny-card:hover {
+    transform: scale(1.4) !important;
+    box-shadow: 0 0 40px rgba(0,0,0,0.4), 0 0 80px currentColor;
+    z-index: 100;
+  }
+
+  .danny-card .role {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 7px;
+    font-style: italic;
+    color: rgba(255,255,255,0.8);
+    margin-top: 1px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  /* Floating Danny (spawned on interaction) */
+  .danny-float {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.4);
+    background-size: cover;
+    background-position: center top;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
 </style>
 </head>
 <body>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-page="page-cursor">CURSOR TRAIL</button>
+  <button class="tab-btn" data-page="page-dannys">FAMOUS DANNYS</button>
+</nav>
+
+<!-- Page 1: Cursor Trail -->
+<div id="page-cursor" class="page active"></div>
+
+<!-- Page 2: Famous Dannys -->
+<div id="page-dannys" class="page"></div>
+
 <script>
+// ============================================
+// TAB NAVIGATION
+// ============================================
+const tabBtns = document.querySelectorAll('.tab-btn');
+const pages = document.querySelectorAll('.page');
+let currentPage = 'page-cursor';
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.page;
+    if (target === currentPage) return;
+    currentPage = target;
+    tabBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+// ============================================
+// PAGE 1: CURSOR TRAIL (original)
+// ============================================
+const cursorPage = document.getElementById('page-cursor');
+
 const fonts = [
   { family: 'Playfair Display', weight: '900', style: 'normal' },
   { family: 'Playfair Display', weight: '400', style: 'italic' },
@@ -101,7 +279,7 @@ function createWordmark(x, y, spread, sizeOverride) {
   el.style.top = (y + offsetY) + 'px';
   el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
-  document.body.appendChild(el);
+  cursorPage.appendChild(el);
   wordmarks.push(el);
 
   if (wordmarks.length > maxWordmarks) {
@@ -140,7 +318,7 @@ function explode(x, y) {
     el.style.opacity = '1';
     el.style.animation = 'none';
 
-    document.body.appendChild(el);
+    cursorPage.appendChild(el);
     wordmarks.push(el);
 
     requestAnimationFrame(() => {
@@ -160,15 +338,20 @@ function explode(x, y) {
 let throttle = false;
 
 document.addEventListener('mousemove', (e) => {
+  if (currentPage !== 'page-cursor') return;
   if (throttle) return;
   throttle = true;
+
+  const rect = cursorPage.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
   if (lastX === -1 || dist > 20) {
-    createWordmark(e.clientX, e.clientY);
+    createWordmark(x, y);
     lastX = e.clientX;
     lastY = e.clientY;
   }
@@ -177,31 +360,39 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  explode(e.clientX, e.clientY);
+  if (currentPage !== 'page-cursor') return;
+  if (e.target.closest('.tab-nav')) return;
+  const rect = cursorPage.getBoundingClientRect();
+  explode(e.clientX - rect.left, e.clientY - rect.top);
 });
 
-// Mobile touch support
+// Mobile touch for cursor page
 let touchMoved = false;
 
 document.addEventListener('touchstart', (e) => {
+  if (currentPage !== 'page-cursor') return;
+  if (e.target.closest('.tab-nav')) return;
   e.preventDefault();
   touchMoved = false;
   const t = e.touches[0];
+  const rect = cursorPage.getBoundingClientRect();
   lastX = t.clientX;
   lastY = t.clientY;
-  createWordmark(t.clientX, t.clientY);
+  createWordmark(t.clientX - rect.left, t.clientY - rect.top);
 }, { passive: false });
 
 document.addEventListener('touchmove', (e) => {
+  if (currentPage !== 'page-cursor') return;
   e.preventDefault();
   touchMoved = true;
+  const rect = cursorPage.getBoundingClientRect();
   for (let i = 0; i < e.touches.length; i++) {
     const t = e.touches[i];
     const dx = t.clientX - lastX;
     const dy = t.clientY - lastY;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > 15) {
-      createWordmark(t.clientX, t.clientY);
+      createWordmark(t.clientX - rect.left, t.clientY - rect.top);
       lastX = t.clientX;
       lastY = t.clientY;
     }
@@ -209,13 +400,292 @@ document.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
+  if (currentPage !== 'page-cursor') return;
+  if (e.target.closest('.tab-nav')) return;
   e.preventDefault();
   if (!touchMoved) {
     const t = e.changedTouches[0];
-    explode(t.clientX, t.clientY);
+    const rect = cursorPage.getBoundingClientRect();
+    explode(t.clientX - rect.left, t.clientY - rect.top);
   }
   lastX = -1;
   lastY = -1;
+}, { passive: false });
+
+// ============================================
+// PAGE 2: FAMOUS DANNYS
+// ============================================
+const dannysPage = document.getElementById('page-dannys');
+
+const famousDannys = [
+  { name: 'Danny DeVito', role: 'Actor · Always Sunny', color: '#e74c3c',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Danny_DeVito_by_Gage_Skidmore.jpg/400px-Danny_DeVito_by_Gage_Skidmore.jpg' },
+  { name: 'Danny Glover', role: 'Actor · Lethal Weapon', color: '#2ecc71',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Danny_Glover_2014_Phoenix_Comicon_2_%28cropped%29.jpg/400px-Danny_Glover_2014_Phoenix_Comicon_2_%28cropped%29.jpg' },
+  { name: 'Danny Trejo', role: 'Actor · Machete', color: '#e67e22',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Danny_Trejo_by_Gage_Skidmore.jpg/400px-Danny_Trejo_by_Gage_Skidmore.jpg' },
+  { name: 'Danny Elfman', role: 'Composer · Batman', color: '#9b59b6',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/20220610_dannyelfman_by_sachynmital_%28cropped%29.jpg/400px-20220610_dannyelfman_by_sachynmital_%28cropped%29.jpg' },
+  { name: 'Danny Kaye', role: 'Actor · White Christmas', color: '#3498db',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Kaye%2C_Danny.jpg/400px-Kaye%2C_Danny.jpg' },
+  { name: 'Danny McBride', role: 'Comedy · Eastbound', color: '#f39c12',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Danny_McBride_WonderCon_2013.jpg/400px-Danny_McBride_WonderCon_2013.jpg' },
+  { name: 'Danny Aiello', role: 'Actor · Do The Right Thing', color: '#1abc9c',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Danny_Aiello.jpg/400px-Danny_Aiello.jpg' },
+  { name: 'Danny Brown', role: 'Rapper · Atrocity Exhibition', color: '#e84393',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Danny_Brown_at_Project_Pabst%2C_May_2017.jpg/400px-Danny_Brown_at_Project_Pabst%2C_May_2017.jpg' },
+  { name: 'Danny Green', role: 'NBA · 3x Champion', color: '#00b894',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Danny_Green%281%29.jpg/400px-Danny_Green%281%29.jpg' },
+  { name: 'Danny Carey', role: 'Drummer · TOOL', color: '#636e72',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Danny_Carey_Hellfest_2019.jpg/400px-Danny_Carey_Hellfest_2019.jpg' },
+  { name: 'Danny Masterson', role: 'Actor · That 70s Show', color: '#6c5ce7',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Danny_Masterson_%28cropped%29.jpg/400px-Danny_Masterson_%28cropped%29.jpg' },
+  { name: 'Danny Ocean', role: "Film · Ocean's Eleven", color: '#fdcb6e',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/George_Clooney.jpg/400px-George_Clooney.jpg' },
+];
+
+// Place initial Danny cards in a scattered grid
+function initDannys() {
+  const pageRect = dannysPage.getBoundingClientRect();
+  const w = pageRect.width || window.innerWidth;
+  const h = pageRect.height || (window.innerHeight - 50);
+  const cols = Math.ceil(Math.sqrt(famousDannys.length * (w / h)));
+  const rows = Math.ceil(famousDannys.length / cols);
+  const cellW = w / cols;
+  const cellH = h / rows;
+
+  famousDannys.forEach((danny, i) => {
+    const card = document.createElement('div');
+    card.className = 'danny-card';
+    card.style.color = danny.color;
+
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = cellW * col + cellW / 2 + (Math.random() - 0.5) * cellW * 0.3;
+    const cy = cellH * row + cellH / 2 + (Math.random() - 0.5) * cellH * 0.3;
+
+    card.style.left = (cx - 65) + 'px';
+    card.style.top = (cy - 65) + 'px';
+    card.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+    card.style.backgroundImage = `url('${danny.img}')`;
+
+    card.innerHTML = `
+      <div class="card-overlay">
+        <span class="name">${danny.name}</span>
+        <span class="role">${danny.role}</span>
+      </div>
+    `;
+
+    card.dataset.dannyIndex = i;
+    dannysPage.appendChild(card);
+  });
+}
+
+initDannys();
+
+// Spawning floating Dannys
+const dannyFloats = [];
+const maxFloats = 80;
+
+function spawnDannyFloat(x, y, sizeScale, danny) {
+  if (!danny) danny = famousDannys[Math.floor(Math.random() * famousDannys.length)];
+  const size = (50 + Math.random() * 70) * (sizeScale || 1);
+
+  const el = document.createElement('div');
+  el.className = 'danny-float';
+  el.style.backgroundImage = `url('${danny.img}')`;
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.opacity = '0';
+  el.style.transform = 'translate(-50%, -50%) scale(0.3)';
+  el.style.transition = 'opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1)';
+
+  dannysPage.appendChild(el);
+  dannyFloats.push(el);
+
+  requestAnimationFrame(() => {
+    el.style.opacity = '0.9';
+    el.style.transform = `translate(-50%, -50%) scale(1) rotate(${(Math.random() - 0.5) * 30}deg)`;
+  });
+
+  // Fade out after delay
+  setTimeout(() => {
+    el.style.transition = 'opacity 1.5s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 1500);
+  }, 3000);
+
+  if (dannyFloats.length > maxFloats) {
+    const old = dannyFloats.shift();
+    old.style.opacity = '0';
+    setTimeout(() => old.remove(), 500);
+  }
+}
+
+function dannyExplode(x, y, danny) {
+  const count = 10 + Math.floor(Math.random() * 6);
+  for (let i = 0; i < count; i++) {
+    const d = danny || famousDannys[Math.floor(Math.random() * famousDannys.length)];
+    const size = 40 + Math.random() * 60;
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const distance = 120 + Math.random() * 220;
+    const endX = Math.cos(angle) * distance;
+    const endY = Math.sin(angle) * distance;
+    const rotation = (Math.random() - 0.5) * 90;
+
+    const el = document.createElement('div');
+    el.className = 'danny-float';
+    el.style.backgroundImage = `url('${d.img}')`;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.opacity = '1';
+    el.style.transform = 'translate(-50%, -50%) scale(1)';
+    el.style.transition = 'none';
+
+    dannysPage.appendChild(el);
+    dannyFloats.push(el);
+
+    requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.8s ease';
+      el.style.transform = `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(${0.5 + Math.random() * 0.8}) rotate(${rotation}deg)`;
+      el.style.opacity = '0.8';
+    });
+
+    setTimeout(() => {
+      el.style.transition = 'opacity 1s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 1000);
+    }, 1500);
+
+    if (dannyFloats.length > maxFloats) {
+      const old = dannyFloats.shift();
+      old.remove();
+    }
+  }
+}
+
+// Dannys page interactions
+let dannyLastX = -1;
+let dannyLastY = -1;
+let dannyThrottle = false;
+let dannyDragging = false;
+
+// Mouse move: trail of random Danny faces
+dannysPage.addEventListener('mousemove', (e) => {
+  if (dannyThrottle) return;
+  dannyThrottle = true;
+
+  const rect = dannysPage.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const dx = e.clientX - dannyLastX;
+  const dy = e.clientY - dannyLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dannyLastX === -1 || dist > 30) {
+    spawnDannyFloat(x, y, 0.7);
+    dannyLastX = e.clientX;
+    dannyLastY = e.clientY;
+  }
+
+  requestAnimationFrame(() => { dannyThrottle = false; });
+});
+
+// Click: explode Dannys outward
+dannysPage.addEventListener('click', (e) => {
+  if (e.target.closest('.tab-nav')) return;
+  const rect = dannysPage.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  // If clicked on a card, explode with that Danny
+  const card = e.target.closest('.danny-card');
+  if (card) {
+    const idx = parseInt(card.dataset.dannyIndex);
+    dannyExplode(x, y, famousDannys[idx]);
+  } else {
+    dannyExplode(x, y);
+  }
+});
+
+// Hover on cards: spawn extra floats around
+dannysPage.addEventListener('mouseover', (e) => {
+  const card = e.target.closest('.danny-card');
+  if (!card) return;
+  const idx = parseInt(card.dataset.dannyIndex);
+  const danny = famousDannys[idx];
+  const rect = card.getBoundingClientRect();
+  const pageRect = dannysPage.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2 - pageRect.left;
+  const cy = rect.top + rect.height / 2 - pageRect.top;
+
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      const ox = (Math.random() - 0.5) * 160;
+      const oy = (Math.random() - 0.5) * 160;
+      spawnDannyFloat(cx + ox, cy + oy, 0.6, danny);
+    }, i * 80);
+  }
+});
+
+// Mobile touch: drag trail + tap explode
+let dannyTouchMoved = false;
+
+dannysPage.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.tab-nav')) return;
+  e.preventDefault();
+  dannyTouchMoved = false;
+  dannyDragging = true;
+  const t = e.touches[0];
+  const rect = dannysPage.getBoundingClientRect();
+  dannyLastX = t.clientX;
+  dannyLastY = t.clientY;
+  spawnDannyFloat(t.clientX - rect.left, t.clientY - rect.top, 0.8);
+}, { passive: false });
+
+dannysPage.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  dannyTouchMoved = true;
+  const rect = dannysPage.getBoundingClientRect();
+  for (let i = 0; i < e.touches.length; i++) {
+    const t = e.touches[i];
+    const dx = t.clientX - dannyLastX;
+    const dy = t.clientY - dannyLastY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 20) {
+      spawnDannyFloat(t.clientX - rect.left, t.clientY - rect.top, 0.7);
+      dannyLastX = t.clientX;
+      dannyLastY = t.clientY;
+    }
+  }
+}, { passive: false });
+
+dannysPage.addEventListener('touchend', (e) => {
+  if (e.target.closest('.tab-nav')) return;
+  e.preventDefault();
+  dannyDragging = false;
+  if (!dannyTouchMoved) {
+    const t = e.changedTouches[0];
+    const rect = dannysPage.getBoundingClientRect();
+    const x = t.clientX - rect.left;
+    const y = t.clientY - rect.top;
+
+    const card = document.elementFromPoint(t.clientX, t.clientY);
+    const dannyCard = card && card.closest('.danny-card');
+    if (dannyCard) {
+      const idx = parseInt(dannyCard.dataset.dannyIndex);
+      dannyExplode(x, y, famousDannys[idx]);
+    } else {
+      dannyExplode(x, y);
+    }
+  }
+  dannyLastX = -1;
+  dannyLastY = -1;
 }, { passive: false });
 </script>
 </body>
