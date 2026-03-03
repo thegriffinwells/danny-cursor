@@ -137,31 +137,27 @@ let hintHidden = false;
 const dannyHint = document.getElementById('danny-hint');
 
 async function loadDannyImages() {
-  // Load in small batches to avoid rate limiting
   const batchSize = 4;
   for (let i = 0; i < famousDannys.length; i += batchSize) {
     const batch = famousDannys.slice(i, i + batchSize);
-    const results = await Promise.allSettled(
+    await Promise.all(
       batch.map(async (danny) => {
-        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
-        const data = await res.json();
-        if (data.thumbnail && data.thumbnail.source) {
-          const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
-          await new Promise((resolve, reject) => {
+        try {
+          const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
+          const data = await res.json();
+          if (data.thumbnail && data.thumbnail.source) {
+            const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
+            // Add immediately, don't wait for preload
+            dannyImages.push({ name: danny.name, src });
+            // Preload in background (non-blocking)
             const img = new Image();
-            img.onload = resolve;
-            img.onerror = reject;
             img.src = src;
-          });
-          return { name: danny.name, src };
-        }
-        throw new Error('No thumbnail');
+          }
+        } catch (e) {}
       })
     );
-    const loaded = results.filter(r => r.status === 'fulfilled').map(r => r.value);
-    dannyImages.push(...loaded);
     if (i + batchSize < famousDannys.length) {
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 200));
     }
   }
 }
