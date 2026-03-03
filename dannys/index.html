@@ -146,7 +146,7 @@ async function loadDannyImages() {
           const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
           const data = await res.json();
           if (data.thumbnail && data.thumbnail.source) {
-            const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
+            const src = data.thumbnail.source;
             // Add immediately, don't wait for preload
             dannyImages.push({ name: danny.name, src });
             // Preload in background (non-blocking)
