@@ -24,6 +24,62 @@
     overscroll-behavior: none;
   }
 
+  /* Pages */
+  .page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 52px);
+    overflow: hidden;
+  }
+
+  .page.hidden {
+    display: none;
+  }
+
+  /* Tab Bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    display: flex;
+    z-index: 9999;
+    background: #fff;
+    border-top: 2px solid #000;
+  }
+
+  .tab-bar button {
+    flex: 1;
+    padding: 0;
+    background: none;
+    border: none;
+    border-left: 1px solid #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    color: #aaa;
+    transition: all 0.15s ease;
+  }
+
+  .tab-bar button:first-child {
+    border-left: none;
+  }
+
+  .tab-bar button.active {
+    background: #000;
+    color: #fff;
+  }
+
+  .tab-bar button:not(.active):hover {
+    background: #f0f0f0;
+    color: #000;
+  }
+
+  /* Page 1: Trail */
   .wordmark {
     position: absolute;
     white-space: nowrap;
@@ -43,10 +99,112 @@
   @keyframes fadeIn {
     to { opacity: 1; }
   }
+
+  /* Page 2: Famous Dannys */
+  #page-dannys {
+    background: #fafafa;
+  }
+
+  .danny-card {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+    text-align: center;
+  }
+
+  .danny-card.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(var(--rot));
+  }
+
+  .danny-card.fading {
+    opacity: 0 !important;
+    transform: translate(-50%, -50%) scale(0.6) rotate(var(--rot));
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+
+  .danny-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  }
+
+  .danny-card .danny-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: #000;
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+
+  .danny-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    color: #ccc;
+    letter-spacing: 0.08em;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    line-height: 2;
+  }
 </style>
 </head>
 <body>
+
+<div id="page-trail" class="page"></div>
+<div id="page-dannys" class="page hidden">
+  <div class="danny-hint" id="danny-hint">MOVE YOUR CURSOR TO SUMMON THE DANNYS<br><span style="font-size:12px;color:#ddd">CLICK TO UNLEASH THEM</span></div>
+</div>
+
+<div class="tab-bar" id="tab-bar">
+  <button class="active" data-page="trail">TRAIL</button>
+  <button data-page="dannys">FAMOUS DANNYS</button>
+</div>
+
 <script>
+// ============================================
+// Navigation
+// ============================================
+let activePage = 'trail';
+
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const page = btn.dataset.page;
+    if (page === activePage) return;
+    activePage = page;
+
+    document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.getElementById('page-trail').classList.toggle('hidden', page !== 'trail');
+    document.getElementById('page-dannys').classList.toggle('hidden', page !== 'dannys');
+  });
+});
+
+// Prevent tab bar from triggering page events
+const tabBar = document.getElementById('tab-bar');
+tabBar.addEventListener('mousedown', e => e.stopPropagation());
+tabBar.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
+tabBar.addEventListener('touchmove', e => e.stopPropagation(), { passive: false });
+tabBar.addEventListener('touchend', e => e.stopPropagation(), { passive: false });
+
+// ============================================
+// Page 1: TRAIL (existing functionality)
+// ============================================
+const trailPage = document.getElementById('page-trail');
+
 const fonts = [
   { family: 'Playfair Display', weight: '900', style: 'normal' },
   { family: 'Playfair Display', weight: '400', style: 'italic' },
@@ -101,7 +259,7 @@ function createWordmark(x, y, spread, sizeOverride) {
   el.style.top = (y + offsetY) + 'px';
   el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
-  document.body.appendChild(el);
+  trailPage.appendChild(el);
   wordmarks.push(el);
 
   if (wordmarks.length > maxWordmarks) {
@@ -140,7 +298,7 @@ function explode(x, y) {
     el.style.opacity = '1';
     el.style.animation = 'none';
 
-    document.body.appendChild(el);
+    trailPage.appendChild(el);
     wordmarks.push(el);
 
     requestAnimationFrame(() => {
@@ -157,11 +315,12 @@ function explode(x, y) {
   }
 }
 
-let throttle = false;
+// Trail mouse events
+let trailThrottle = false;
 
 document.addEventListener('mousemove', (e) => {
-  if (throttle) return;
-  throttle = true;
+  if (activePage !== 'trail' || trailThrottle) return;
+  trailThrottle = true;
 
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
@@ -173,17 +332,21 @@ document.addEventListener('mousemove', (e) => {
     lastY = e.clientY;
   }
 
-  requestAnimationFrame(() => { throttle = false; });
+  requestAnimationFrame(() => { trailThrottle = false; });
 });
 
 document.addEventListener('click', (e) => {
+  if (activePage !== 'trail') return;
+  if (e.target.closest('.tab-bar')) return;
   explode(e.clientX, e.clientY);
 });
 
-// Mobile touch support
+// Trail touch events
 let touchMoved = false;
 
 document.addEventListener('touchstart', (e) => {
+  if (activePage !== 'trail') return;
+  if (e.target.closest('.tab-bar')) return;
   e.preventDefault();
   touchMoved = false;
   const t = e.touches[0];
@@ -193,6 +356,8 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchmove', (e) => {
+  if (activePage !== 'trail') return;
+  if (e.target.closest('.tab-bar')) return;
   e.preventDefault();
   touchMoved = true;
   for (let i = 0; i < e.touches.length; i++) {
@@ -209,6 +374,8 @@ document.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
+  if (activePage !== 'trail') return;
+  if (e.target.closest('.tab-bar')) return;
   e.preventDefault();
   if (!touchMoved) {
     const t = e.changedTouches[0];
@@ -216,6 +383,221 @@ document.addEventListener('touchend', (e) => {
   }
   lastX = -1;
   lastY = -1;
+}, { passive: false });
+
+// ============================================
+// Page 2: FAMOUS DANNYS
+// ============================================
+const dannysPage = document.getElementById('page-dannys');
+const dannyHint = document.getElementById('danny-hint');
+
+const famousDannys = [
+  { name: 'DANNY DEVITO', wiki: 'Danny_DeVito' },
+  { name: 'DANNY GLOVER', wiki: 'Danny_Glover' },
+  { name: 'DANNY TREJO', wiki: 'Danny_Trejo' },
+  { name: 'DANNY MCBRIDE', wiki: 'Danny_McBride' },
+  { name: 'DANNY ELFMAN', wiki: 'Danny_Elfman' },
+  { name: 'DANNY KAYE', wiki: 'Danny_Kaye' },
+  { name: 'DANNY AIELLO', wiki: 'Danny_Aiello' },
+  { name: 'DANNY BROWN', wiki: 'Danny_Brown_(rapper)' },
+  { name: 'DANNY GREEN', wiki: 'Danny_Green_(basketball)' },
+  { name: 'DANNY BOYLE', wiki: 'Danny_Boyle' },
+  { name: 'DANNY WELBECK', wiki: 'Danny_Welbeck' },
+  { name: 'DANNY CAREY', wiki: 'Danny_Carey' },
+  { name: 'DANNY MASSEY', wiki: 'Daniel_Massey' },
+  { name: 'DANNY THOMAS', wiki: 'Danny_Thomas' },
+];
+
+let dannyImages = []; // { name, src } after loading
+const dannyCards = [];
+const maxDannyCards = 40;
+let dannyLastX = -1;
+let dannyLastY = -1;
+let hintHidden = false;
+
+// Fetch images from Wikipedia REST API
+async function loadDannyImages() {
+  const results = await Promise.allSettled(
+    famousDannys.map(async (danny) => {
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${danny.wiki}`);
+      const data = await res.json();
+      if (data.thumbnail && data.thumbnail.source) {
+        const src = data.thumbnail.source.replace(/\/\d+px-/, '/300px-');
+        // Preload image
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = src;
+        });
+        return { name: danny.name, src };
+      }
+      throw new Error('No thumbnail');
+    })
+  );
+
+  dannyImages = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value);
+}
+
+loadDannyImages();
+
+function getRandomDanny() {
+  if (dannyImages.length === 0) return null;
+  return dannyImages[Math.floor(Math.random() * dannyImages.length)];
+}
+
+function spawnDanny(x, y, sizeMultiplier) {
+  const danny = getRandomDanny();
+  if (!danny) return;
+
+  if (!hintHidden) {
+    hintHidden = true;
+    dannyHint.style.opacity = '0';
+  }
+
+  const card = document.createElement('div');
+  card.className = 'danny-card';
+
+  const dim = (70 + Math.random() * 70) * (sizeMultiplier || 1);
+  const offsetX = (Math.random() - 0.5) * 100;
+  const offsetY = (Math.random() - 0.5) * 100;
+  const rot = ((Math.random() - 0.5) * 24).toFixed(1);
+
+  card.style.left = (x + offsetX) + 'px';
+  card.style.top = (y + offsetY) + 'px';
+  card.style.width = dim + 'px';
+  card.style.setProperty('--rot', rot + 'deg');
+
+  const img = document.createElement('img');
+  img.src = danny.src;
+  img.alt = danny.name;
+  img.style.width = dim + 'px';
+  img.style.height = dim + 'px';
+  card.appendChild(img);
+
+  const label = document.createElement('div');
+  label.className = 'danny-name';
+  label.textContent = danny.name;
+  card.appendChild(label);
+
+  dannysPage.appendChild(card);
+  dannyCards.push(card);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    card.classList.add('visible');
+  });
+
+  // Fade out after a bit
+  const lifetime = 1800 + Math.random() * 1200;
+  setTimeout(() => {
+    card.classList.remove('visible');
+    card.classList.add('fading');
+    setTimeout(() => card.remove(), 500);
+  }, lifetime);
+
+  // Remove oldest if too many
+  if (dannyCards.length > maxDannyCards) {
+    const old = dannyCards.shift();
+    old.classList.remove('visible');
+    old.classList.add('fading');
+    setTimeout(() => old.remove(), 500);
+  }
+}
+
+function dannyExplode(x, y) {
+  const count = 8 + Math.floor(Math.random() * 6);
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+    const distance = 80 + Math.random() * 160;
+    const ex = x + Math.cos(angle) * distance;
+    const ey = y + Math.sin(angle) * distance;
+
+    setTimeout(() => {
+      spawnDanny(ex, ey, 0.8 + Math.random() * 0.6);
+    }, i * 40);
+  }
+}
+
+// Danny mouse events
+let dannyThrottle = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (activePage !== 'dannys' || dannyThrottle) return;
+  dannyThrottle = true;
+
+  const dx = e.clientX - dannyLastX;
+  const dy = e.clientY - dannyLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dannyLastX === -1 || dist > 60) {
+    spawnDanny(e.clientX, e.clientY);
+    dannyLastX = e.clientX;
+    dannyLastY = e.clientY;
+  }
+
+  requestAnimationFrame(() => { dannyThrottle = false; });
+});
+
+document.addEventListener('click', (e) => {
+  if (activePage !== 'dannys') return;
+  if (e.target.closest('.tab-bar')) return;
+  dannyExplode(e.clientX, e.clientY);
+});
+
+// Danny touch events
+let dannyTouchMoved = false;
+let holdInterval = null;
+
+document.addEventListener('touchstart', (e) => {
+  if (activePage !== 'dannys') return;
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  dannyTouchMoved = false;
+  const t = e.touches[0];
+  dannyLastX = t.clientX;
+  dannyLastY = t.clientY;
+  spawnDanny(t.clientX, t.clientY);
+
+  // Hold to rapid-fire
+  holdInterval = setInterval(() => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      spawnDanny(dannyLastX + (Math.random() - 0.5) * 60, dannyLastY + (Math.random() - 0.5) * 60);
+    }
+  }, 180);
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (activePage !== 'dannys') return;
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  dannyTouchMoved = true;
+  const t = e.touches[0];
+  const dx = t.clientX - dannyLastX;
+  const dy = t.clientY - dannyLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > 40) {
+    spawnDanny(t.clientX, t.clientY);
+    dannyLastX = t.clientX;
+    dannyLastY = t.clientY;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  if (activePage !== 'dannys') return;
+  if (e.target.closest('.tab-bar')) return;
+  e.preventDefault();
+  clearInterval(holdInterval);
+  holdInterval = null;
+  if (!dannyTouchMoved) {
+    const t = e.changedTouches[0];
+    dannyExplode(t.clientX, t.clientY);
+  }
+  dannyLastX = -1;
+  dannyLastY = -1;
 }, { passive: false });
 </script>
 </body>
